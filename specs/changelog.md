@@ -12,6 +12,33 @@ Regla: todo cambio de código del agente **debe** sumar una entrada aquí y actu
 
 ---
 
+## v1.0.4 — 2026-08-08
+
+**Tipo:** Nueva Función  
+
+**Título:** CI/CD versionado + publicación en GitHub Pages  
+
+**Descripción APB:**  
+El proyecto se valida solo en GitHub (build backend/frontend), publica Releases con la versión del changelog y deja la UI del frontend en GitHub Pages con un enlace público. El backend sigue siendo local.
+
+**Archivos afectados:**
+
+- `.github/workflows/ci.yml`
+- `.github/workflows/release.yml`
+- `.github/workflows/pages.yml`
+- `frontend/src/environments/environment.ts`
+- `frontend/src/environments/environment.prod.ts`
+- `frontend/src/app/services/api.service.ts`
+- `frontend/angular.json`
+- `frontend/package.json`
+- `README.md`
+- `specs/requirements.md`
+- `specs/architecture.md`
+- `specs/changelog.md`
+- `specs/README.md`
+
+---
+
 ## v1.0.3 — 2026-08-08
 
 **Tipo:** Nueva Función  

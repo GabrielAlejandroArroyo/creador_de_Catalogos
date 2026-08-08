@@ -18,8 +18,8 @@
                                                          backend/catalog.db
 ```
 
-- **Frontend:** SPA Angular (standalone), habla solo con `http://localhost:8000/api`.
-- **Backend:** API REST FastAPI, CORS abierto (`*`).
+- **Frontend:** SPA Angular (standalone); `apiBaseUrl` desde `environments` (local: `http://localhost:8000/api`). UI también desplegada en GitHub Pages.
+- **Backend:** API REST FastAPI, CORS abierto (`*`). Solo local (no en Pages).
 - **Persistencia:** SQLite archivo `backend/catalog.db`.
 
 No hay capa de autenticación ni gateway intermedio.
@@ -59,6 +59,7 @@ creador_de_Catalogos/
 │   └── angular.json
 ├── scripts/                 # Bat/ps1 de arranque, stop y seeds (Windows)
 ├── specs/                   # Spec-Driven Development (este árbol)
+├── .github/workflows/       # CI, Release versionado, Deploy Pages
 └── .cursor/                 # Skills / rules del agente
 ```
 
@@ -279,13 +280,29 @@ GET /api/ai/status
 
 ---
 
-## 10. Límites técnicos actuales (hechos, no backlog)
+## 10. CI/CD y publicación (GitHub)
 
-- URL del API **hardcodeada** en el frontend (`localhost:8000`).
-- SQLite de un solo archivo; sin entornos staging/prod separados en código.
+| Workflow | Archivo | Qué hace |
+|----------|---------|----------|
+| CI | `.github/workflows/ci.yml` | En push/PR a `main`: import sanity del backend + `ng build` production |
+| Release | `.github/workflows/release.yml` | En push a `main`: lee la versión tope de `specs/changelog.md`; si el tag no existe, crea tag + GitHub Release y adjunta `frontend-dist.zip` |
+| Pages | `.github/workflows/pages.yml` | En push a `main` (o manual): build con `--base-href /creador_de_Catalogos/` y deploy a GitHub Pages |
+
+- Fuente de versión de producto: primera entrada `## vX.Y.Z` en `specs/changelog.md`.
+- Frontend: `apiBaseUrl` vía `frontend/src/environments/environment*.ts` (dev/prod; prod apunta a API local porque el backend no se hostea en Pages).
+- URL pública de la UI: `https://gabrielalejandroarroyo.github.io/creador_de_Catalogos/`
+- El backend FastAPI **no** se despliega en GitHub; sigue siendo local (`:8000`).
+
+---
+
+## 11. Límites técnicos actuales (hechos, no backlog)
+
+- API del frontend configurable por environment; en prod Pages sigue apuntando a `localhost:8000` (sin backend cloud).
+- SQLite de un solo archivo; sin entornos staging/prod de datos separados.
 - CORS permisivo.
 - Lógica de items muy concentrada en un componente grande.
 - Exportación 100% client-side.
 - Conexiones IA editables sin auth; API keys en SQLite (enmascaradas en listados).
 - Sin API key: fallback Ollama local (DeepSeek-R1 preferido) o RAG offline.
 - RAG sin vector DB: score por tokens sobre markdowns en `ai_knowledge/`.
+- Pages sirve solo el frontend estático; sin API en la nube las llamadas de datos fallan si no hay backend local.

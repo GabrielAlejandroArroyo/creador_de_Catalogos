@@ -8,8 +8,9 @@ import {
   AiConnection, AiConnectionCreate, AiConnectionUpdate,
   AiStatus, AiChatRequest, AiChatResponse, AiTestResponse,
 } from '../models/interfaces';
+import { environment } from '../../environments/environment';
 
-const BASE = 'http://localhost:8000/api';
+const BASE = environment.apiBaseUrl;
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {

@@ -175,7 +175,7 @@ Esta lista es deliberada: si algo no está acá implementado, **no existe**.
 7. **No** hay API de exportación en el servidor.
 8. **No** hay notificaciones, correo ni jobs en segundo plano.
 9. **No** hay tests automatizados visibles en el repo como suite formal.
-10. **No** hay despliegue cloud documentado: corre local (backend `:8000`, frontend `:4200`).
+10. **No** se hostea el backend FastAPI en la nube: corre local (`:8000`). El frontend sí se publica en GitHub Pages (UI estática).
 11. **No** hay base de datos distinta de SQLite local (`catalog.db`) en la configuración actual.
 12. **No** hay búsqueda global / dashboard de métricas.
 13. **No** hay “copiar catálogo completo” como función dedicada (aunque existan datos con nombres tipo “Catalogocopia”).
@@ -210,3 +210,19 @@ La app arranca redirigiendo a `/catalogs`. El botón flotante del **Asistente IA
 - Script típico: `scripts/start_all.bat` (Windows)
 
 Hay scripts de seed (`seed_platforms`, `seed_objects`, `seed_changes_complexity`) para cargar datos iniciales de maestros.
+
+---
+
+## 9. Publicación en GitHub (qué hace / qué no)
+
+### Qué hace
+
+1. En cada push o PR a `main`, GitHub Actions corre **CI** (backend import + build frontend).
+2. Si la versión tope de `specs/changelog.md` (ej. `v1.0.4`) aún no tiene tag, Actions crea el **tag**, un **GitHub Release** con las notas de esa entrada y adjunta el zip del frontend.
+3. El frontend se despliega a **GitHub Pages** para ver la UI en el navegador.
+
+### Qué NO hace
+
+1. **No** publica ni ejecuta el backend en GitHub/Pages.
+2. **No** crea versiones si el tag ya existe (idempotente).
+3. **No** reemplaza el uso local completo: para datos reales seguís necesitando API + SQLite en tu máquina.
