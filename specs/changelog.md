@@ -12,6 +12,23 @@ Regla: todo cambio de código del agente **debe** sumar una entrada aquí y actu
 
 ---
 
+## v1.0.8 — 2026-08-08
+
+**Tipo:** Corrección  
+
+**Título:** “Seleccionar todos” visible junto al título de cada lista múltiple  
+
+**Descripción APB:**  
+El control quedó arriba de cada caja (Objeto, Cambio, Complejidad Objeto, Complejidad Cambio), al lado del título, con el texto “Seleccionar todos”, para que no se pierda dentro del scroll.
+
+**Archivos afectados:**
+
+- `frontend/src/app/components/catalog-items/catalog-items.component.ts`
+- `specs/requirements.md`
+- `specs/changelog.md`
+
+---
+
 ## v1.0.7 — 2026-08-08
 
 **Tipo:** Nueva Función  

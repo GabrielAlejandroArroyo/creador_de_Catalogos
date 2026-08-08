@@ -137,17 +137,19 @@ type BajaFilter = 'all' | 'yes' | 'no';
 
           <div class="multi-grid" *ngIf="showObjeto">
             <div class="field" *ngIf="showObjeto">
-              <label>Objeto <span class="hint">(múltiple)</span></label>
-              <div class="checkbox-box" *ngIf="filteredObjects.length; else noObjects">
-                <label class="checkbox-label select-all-label">
+              <div class="field-label-row">
+                <label>Objeto <span class="hint">(múltiple)</span></label>
+                <label class="select-all-action" *ngIf="filteredObjects.length">
                   <input
                     type="checkbox"
                     [checked]="areAllObjectsSelected()"
                     [indeterminate]="areSomeObjectsSelected() && !areAllObjectsSelected()"
                     (change)="toggleAllObjects()"
                   />
-                  Seleccionar todo
+                  Seleccionar todos
                 </label>
+              </div>
+              <div class="checkbox-box" *ngIf="filteredObjects.length; else noObjects">
                 <label *ngFor="let o of filteredObjects" class="checkbox-label">
                   <input type="checkbox" [checked]="selectedObjectIds.has(o.id)" (change)="toggleObject(o.id)" />
                   {{ o.description }} ({{ o.initial }})
@@ -157,17 +159,19 @@ type BajaFilter = 'all' | 'yes' | 'no';
             </div>
 
             <div class="field" *ngIf="showCambio">
-              <label>Cambio <span class="hint">(múltiple)</span></label>
-              <div class="checkbox-box">
-                <label class="checkbox-label select-all-label" *ngIf="changes.length">
+              <div class="field-label-row">
+                <label>Cambio <span class="hint">(múltiple)</span></label>
+                <label class="select-all-action" *ngIf="changes.length">
                   <input
                     type="checkbox"
                     [checked]="areAllChangesSelected()"
                     [indeterminate]="areSomeChangesSelected() && !areAllChangesSelected()"
                     (change)="toggleAllChanges()"
                   />
-                  Seleccionar todo
+                  Seleccionar todos
                 </label>
+              </div>
+              <div class="checkbox-box">
                 <label *ngFor="let c of changes" class="checkbox-label">
                   <input type="checkbox" [checked]="selectedChangeIds.has(c.id)" (change)="toggleChange(c.id)" />
                   {{ c.description }} ({{ c.initial }})
@@ -176,17 +180,19 @@ type BajaFilter = 'all' | 'yes' | 'no';
             </div>
 
             <div class="field" *ngIf="showComplejidadObjeto">
-              <label>Complejidad Objeto <span class="hint">(múltiple)</span></label>
-              <div class="checkbox-box">
-                <label class="checkbox-label select-all-label" *ngIf="complexityObjects.length">
+              <div class="field-label-row">
+                <label>Complejidad Objeto <span class="hint">(múltiple)</span></label>
+                <label class="select-all-action" *ngIf="complexityObjects.length">
                   <input
                     type="checkbox"
                     [checked]="areAllComplexityObjectsSelected()"
                     [indeterminate]="areSomeComplexityObjectsSelected() && !areAllComplexityObjectsSelected()"
                     (change)="toggleAllComplexityObjects()"
                   />
-                  Seleccionar todo
+                  Seleccionar todos
                 </label>
+              </div>
+              <div class="checkbox-box">
                 <label *ngFor="let co of complexityObjects" class="checkbox-label">
                   <input type="checkbox" [checked]="selectedComplexityObjectIds.has(co.id)" (change)="toggleComplexityObject(co.id)" />
                   {{ co.description }} ({{ co.initial }})
@@ -195,17 +201,19 @@ type BajaFilter = 'all' | 'yes' | 'no';
             </div>
 
             <div class="field" *ngIf="showComplejidadCambio">
-              <label>Complejidad Cambio <span class="hint">(múltiple)</span></label>
-              <div class="checkbox-box">
-                <label class="checkbox-label select-all-label" *ngIf="complexityChanges.length">
+              <div class="field-label-row">
+                <label>Complejidad Cambio <span class="hint">(múltiple)</span></label>
+                <label class="select-all-action" *ngIf="complexityChanges.length">
                   <input
                     type="checkbox"
                     [checked]="areAllComplexityChangesSelected()"
                     [indeterminate]="areSomeComplexityChangesSelected() && !areAllComplexityChangesSelected()"
                     (change)="toggleAllComplexityChanges()"
                   />
-                  Seleccionar todo
+                  Seleccionar todos
                 </label>
+              </div>
+              <div class="checkbox-box">
                 <label *ngFor="let cc of complexityChanges" class="checkbox-label">
                   <input type="checkbox" [checked]="selectedComplexityChangeIds.has(cc.id)" (change)="toggleComplexityChange(cc.id)" />
                   {{ cc.description }} ({{ cc.initial }})
@@ -1147,12 +1155,19 @@ type BajaFilter = 'all' | 'yes' | 'no';
       font-size: 0.9rem; color: var(--color-text); display: flex; align-items: center;
       gap: 6px; flex-wrap: wrap; min-height: 28px;
     }
+    .field-label-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      flex-wrap: wrap; margin-bottom: 6px;
+    }
+    .field-label-row > label:first-child { margin-bottom: 0; }
+    .select-all-action {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.78rem; font-weight: 700; color: var(--color-accent, #38bdf8);
+      cursor: pointer; user-select: none; white-space: nowrap;
+    }
+    .select-all-action input { width: 14px; height: 14px; margin: 0; cursor: pointer; accent-color: #38bdf8; }
     .checkbox-box { border: 1px solid var(--color-border); border-radius: 6px; padding: 10px; max-height: 180px; overflow-y: auto; background: var(--color-surface-muted); }
     .checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--color-text); padding: 4px 0; cursor: pointer; }
-    .select-all-label {
-      font-weight: 700; color: var(--color-text);
-      border-bottom: 1px solid var(--color-border); padding-bottom: 8px; margin-bottom: 4px;
-    }
     .muted { font-size: 0.85rem; color: var(--color-text-faint); margin: 0; }
     .code-preview {
       margin-top: 16px; border-radius: 8px; border: 1px solid var(--color-border-strong);
