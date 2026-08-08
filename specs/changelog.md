@@ -12,6 +12,23 @@ Regla: todo cambio de código del agente **debe** sumar una entrada aquí y actu
 
 ---
 
+## v1.0.7 — 2026-08-08
+
+**Tipo:** Nueva Función  
+
+**Título:** Seleccionar todo en listas múltiples del alta de items  
+
+**Descripción APB:**  
+En Nuevo Item, Objeto / Cambio / Complejidad Objeto / Complejidad Cambio tienen un checkbox “Seleccionar todo” arriba de la lista para marcar o desmarcar todas las opciones de un saque (con estado parcial si marcás solo algunas).
+
+**Archivos afectados:**
+
+- `frontend/src/app/components/catalog-items/catalog-items.component.ts`
+- `specs/requirements.md`
+- `specs/changelog.md`
+
+---
+
 ## v1.0.6 — 2026-08-08
 
 **Tipo:** Corrección  

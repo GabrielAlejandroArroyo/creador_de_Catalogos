@@ -139,6 +139,15 @@ type BajaFilter = 'all' | 'yes' | 'no';
             <div class="field" *ngIf="showObjeto">
               <label>Objeto <span class="hint">(múltiple)</span></label>
               <div class="checkbox-box" *ngIf="filteredObjects.length; else noObjects">
+                <label class="checkbox-label select-all-label">
+                  <input
+                    type="checkbox"
+                    [checked]="areAllObjectsSelected()"
+                    [indeterminate]="areSomeObjectsSelected() && !areAllObjectsSelected()"
+                    (change)="toggleAllObjects()"
+                  />
+                  Seleccionar todo
+                </label>
                 <label *ngFor="let o of filteredObjects" class="checkbox-label">
                   <input type="checkbox" [checked]="selectedObjectIds.has(o.id)" (change)="toggleObject(o.id)" />
                   {{ o.description }} ({{ o.initial }})
@@ -150,6 +159,15 @@ type BajaFilter = 'all' | 'yes' | 'no';
             <div class="field" *ngIf="showCambio">
               <label>Cambio <span class="hint">(múltiple)</span></label>
               <div class="checkbox-box">
+                <label class="checkbox-label select-all-label" *ngIf="changes.length">
+                  <input
+                    type="checkbox"
+                    [checked]="areAllChangesSelected()"
+                    [indeterminate]="areSomeChangesSelected() && !areAllChangesSelected()"
+                    (change)="toggleAllChanges()"
+                  />
+                  Seleccionar todo
+                </label>
                 <label *ngFor="let c of changes" class="checkbox-label">
                   <input type="checkbox" [checked]="selectedChangeIds.has(c.id)" (change)="toggleChange(c.id)" />
                   {{ c.description }} ({{ c.initial }})
@@ -160,6 +178,15 @@ type BajaFilter = 'all' | 'yes' | 'no';
             <div class="field" *ngIf="showComplejidadObjeto">
               <label>Complejidad Objeto <span class="hint">(múltiple)</span></label>
               <div class="checkbox-box">
+                <label class="checkbox-label select-all-label" *ngIf="complexityObjects.length">
+                  <input
+                    type="checkbox"
+                    [checked]="areAllComplexityObjectsSelected()"
+                    [indeterminate]="areSomeComplexityObjectsSelected() && !areAllComplexityObjectsSelected()"
+                    (change)="toggleAllComplexityObjects()"
+                  />
+                  Seleccionar todo
+                </label>
                 <label *ngFor="let co of complexityObjects" class="checkbox-label">
                   <input type="checkbox" [checked]="selectedComplexityObjectIds.has(co.id)" (change)="toggleComplexityObject(co.id)" />
                   {{ co.description }} ({{ co.initial }})
@@ -170,6 +197,15 @@ type BajaFilter = 'all' | 'yes' | 'no';
             <div class="field" *ngIf="showComplejidadCambio">
               <label>Complejidad Cambio <span class="hint">(múltiple)</span></label>
               <div class="checkbox-box">
+                <label class="checkbox-label select-all-label" *ngIf="complexityChanges.length">
+                  <input
+                    type="checkbox"
+                    [checked]="areAllComplexityChangesSelected()"
+                    [indeterminate]="areSomeComplexityChangesSelected() && !areAllComplexityChangesSelected()"
+                    (change)="toggleAllComplexityChanges()"
+                  />
+                  Seleccionar todo
+                </label>
                 <label *ngFor="let cc of complexityChanges" class="checkbox-label">
                   <input type="checkbox" [checked]="selectedComplexityChangeIds.has(cc.id)" (change)="toggleComplexityChange(cc.id)" />
                   {{ cc.description }} ({{ cc.initial }})
@@ -1113,6 +1149,10 @@ type BajaFilter = 'all' | 'yes' | 'no';
     }
     .checkbox-box { border: 1px solid var(--color-border); border-radius: 6px; padding: 10px; max-height: 180px; overflow-y: auto; background: var(--color-surface-muted); }
     .checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--color-text); padding: 4px 0; cursor: pointer; }
+    .select-all-label {
+      font-weight: 700; color: var(--color-text);
+      border-bottom: 1px solid var(--color-border); padding-bottom: 8px; margin-bottom: 4px;
+    }
     .muted { font-size: 0.85rem; color: var(--color-text-faint); margin: 0; }
     .code-preview {
       margin-top: 16px; border-radius: 8px; border: 1px solid var(--color-border-strong);
@@ -2267,11 +2307,52 @@ export class CatalogItemsComponent implements OnInit {
     this.pruneExcludedCodes();
   }
 
+  areAllObjectsSelected(): boolean {
+    return this.filteredObjects.length > 0
+      && this.filteredObjects.every(o => this.selectedObjectIds.has(o.id));
+  }
+
+  areSomeObjectsSelected(): boolean {
+    return this.filteredObjects.some(o => this.selectedObjectIds.has(o.id));
+  }
+
+  toggleAllObjects() {
+    if (this.areAllObjectsSelected()) {
+      this.selectedObjectIds.clear();
+      this.selectedChangeIds.clear();
+      this.selectedComplexityObjectIds.clear();
+      this.selectedComplexityChangeIds.clear();
+    } else {
+      for (const o of this.filteredObjects) this.selectedObjectIds.add(o.id);
+    }
+    this.pruneExcludedCodes();
+  }
+
   toggleChange(id: number) {
     this.toggle(this.selectedChangeIds, id);
     if (!this.selectedChangeIds.size) {
       this.selectedComplexityObjectIds.clear();
       this.selectedComplexityChangeIds.clear();
+    }
+    this.pruneExcludedCodes();
+  }
+
+  areAllChangesSelected(): boolean {
+    return this.changes.length > 0
+      && this.changes.every(c => this.selectedChangeIds.has(c.id));
+  }
+
+  areSomeChangesSelected(): boolean {
+    return this.changes.some(c => this.selectedChangeIds.has(c.id));
+  }
+
+  toggleAllChanges() {
+    if (this.areAllChangesSelected()) {
+      this.selectedChangeIds.clear();
+      this.selectedComplexityObjectIds.clear();
+      this.selectedComplexityChangeIds.clear();
+    } else {
+      for (const c of this.changes) this.selectedChangeIds.add(c.id);
     }
     this.pruneExcludedCodes();
   }
@@ -2284,8 +2365,45 @@ export class CatalogItemsComponent implements OnInit {
     this.pruneExcludedCodes();
   }
 
+  areAllComplexityObjectsSelected(): boolean {
+    return this.complexityObjects.length > 0
+      && this.complexityObjects.every(co => this.selectedComplexityObjectIds.has(co.id));
+  }
+
+  areSomeComplexityObjectsSelected(): boolean {
+    return this.complexityObjects.some(co => this.selectedComplexityObjectIds.has(co.id));
+  }
+
+  toggleAllComplexityObjects() {
+    if (this.areAllComplexityObjectsSelected()) {
+      this.selectedComplexityObjectIds.clear();
+      this.selectedComplexityChangeIds.clear();
+    } else {
+      for (const co of this.complexityObjects) this.selectedComplexityObjectIds.add(co.id);
+    }
+    this.pruneExcludedCodes();
+  }
+
   toggleComplexityChange(id: number) {
     this.toggle(this.selectedComplexityChangeIds, id);
+    this.pruneExcludedCodes();
+  }
+
+  areAllComplexityChangesSelected(): boolean {
+    return this.complexityChanges.length > 0
+      && this.complexityChanges.every(cc => this.selectedComplexityChangeIds.has(cc.id));
+  }
+
+  areSomeComplexityChangesSelected(): boolean {
+    return this.complexityChanges.some(cc => this.selectedComplexityChangeIds.has(cc.id));
+  }
+
+  toggleAllComplexityChanges() {
+    if (this.areAllComplexityChangesSelected()) {
+      this.selectedComplexityChangeIds.clear();
+    } else {
+      for (const cc of this.complexityChanges) this.selectedComplexityChangeIds.add(cc.id);
+    }
     this.pruneExcludedCodes();
   }
 

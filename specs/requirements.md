@@ -82,13 +82,15 @@ Sin estos maestros no se pueden armar items con sentido.
 
 1. Abrir un catálogo → pantalla **Items del Catálogo**.
 2. Elegir **Plataforma**.
-3. Marcar uno o más **Objetos** (solo los de esa plataforma).
-4. Marcar uno o más **Cambios**.
-5. Marcar una o más **Complejidades de Objeto**.
-6. Marcar una o más **Complejidades de Cambio**.
+3. Marcar uno o más **Objetos** (solo los de esa plataforma), o usar **Seleccionar todo** en esa lista.
+4. Marcar uno o más **Cambios**, o **Seleccionar todo**.
+5. Marcar una o más **Complejidades de Objeto**, o **Seleccionar todo**.
+6. Marcar una o más **Complejidades de Cambio**, o **Seleccionar todo**.
 7. El sistema muestra un **preview** de todos los códigos que saldrían de combinar esas selecciones.
 8. Si algún código **ya existe** en el catálogo, aparece como conflicto; se puede desmarcar / excluir.
 9. Confirmar **Agregar Items** → se crean solo los códigos nuevos (sin conflicto).
+
+En cada lista múltiple del alta, **Seleccionar todo** marca todas las opciones visibles; si ya estaban todas marcadas, las desmarca (y limpia los niveles siguientes de la cascada cuando corresponde).
 
 El código lo genera el backend pegando siglas. El frontend no inventa el código final de persistencia.
 
