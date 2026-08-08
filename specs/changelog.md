@@ -12,6 +12,23 @@ Regla: todo cambio de código del agente **debe** sumar una entrada aquí y actu
 
 ---
 
+## v1.0.5 — 2026-08-08
+
+**Tipo:** Corrección  
+
+**Título:** CI Linux: rollup win32 solo como dependencia opcional  
+
+**Descripción APB:**  
+En GitHub Actions (Linux) `npm ci` fallaba porque el paquete de Rollup para Windows estaba en `devDependencies`. Quedó solo en `optionalDependencies` para que el build en CI y Pages funcione.
+
+**Archivos afectados:**
+
+- `frontend/package.json`
+- `frontend/package-lock.json`
+- `specs/changelog.md`
+
+---
+
 ## v1.0.4 — 2026-08-08
 
 **Tipo:** Nueva Función  
