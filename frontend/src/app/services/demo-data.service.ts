@@ -204,6 +204,150 @@ export class DemoDataService {
     );
   }
 
+  createCatalogItem(catalogId: number, data: {
+    platform_id: number;
+    object_id: number;
+    change_id: number;
+    complexity_object_id: number;
+    complexity_change_id: number;
+    time?: number;
+  }): Observable<CatalogItem> {
+    return this.load().pipe(
+      switchMap(db => {
+        if (!db.catalogs.some(c => c.id === catalogId)) {
+          return throwError(() => ({ status: 404, error: { detail: 'Catálogo no encontrado' } }));
+        }
+        const platform = db.platforms.find(p => p.id === data.platform_id);
+        const obj = db.objects.find(o => o.id === data.object_id);
+        const change = db.changes.find(c => c.id === data.change_id);
+        const co = db.complexity_objects.find(x => x.id === data.complexity_object_id);
+        const cc = db.complexity_changes.find(x => x.id === data.complexity_change_id);
+        if (!platform || !obj || !change || !co || !cc) {
+          return throwError(() => ({ status: 400, error: { detail: 'Referencias de item inválidas' } }));
+        }
+        const code = `${platform.initial}${obj.initial}${change.initial}${co.initial}${cc.initial}`;
+        if (db.catalog_items.some(i => i.catalog_id === catalogId && i.code === code)) {
+          return throwError(() => ({
+            status: 409,
+            error: { detail: `Ya existe un item con el código '${code}' en este catálogo` },
+          }));
+        }
+        const created = {
+          id: this.nextId(db.catalog_items.map(i => i.id)),
+          catalog_id: catalogId,
+          platform_id: data.platform_id,
+          object_id: data.object_id,
+          change_id: data.change_id,
+          complexity_object_id: data.complexity_object_id,
+          complexity_change_id: data.complexity_change_id,
+          code,
+          time: data.time ?? 0,
+          baja_logica: false,
+        };
+        db.catalog_items.push(created);
+        this.persist();
+        return from([this.enrichItem(db, created)]);
+      }),
+    );
+  }
+
+  updateCatalogItem(catalogId: number, itemId: number, data: { time: number }): Observable<CatalogItem> {
+    return this.load().pipe(
+      switchMap(db => {
+        const item = db.catalog_items.find(i => i.id === itemId && i.catalog_id === catalogId);
+        if (!item) {
+          return throwError(() => ({ status: 404, error: { detail: 'Item no encontrado' } }));
+        }
+        if (item.baja_logica) {
+          return throwError(() => ({ status: 400, error: { detail: 'No se puede editar un item con baja lógica' } }));
+        }
+        item.time = data.time ?? 0;
+        this.persist();
+        return from([this.enrichItem(db, item)]);
+      }),
+    );
+  }
+
+  activateCatalogItem(catalogId: number, itemId: number): Observable<CatalogItem> {
+    return this.load().pipe(
+      switchMap(db => {
+        const item = db.catalog_items.find(i => i.id === itemId && i.catalog_id === catalogId);
+        if (!item) {
+          return throwError(() => ({ status: 404, error: { detail: 'Item no encontrado' } }));
+        }
+        item.baja_logica = false;
+        this.persist();
+        return from([this.enrichItem(db, item)]);
+      }),
+    );
+  }
+
+  bulkActivateCatalogItems(catalogId: number, itemIds: number[]): Observable<{ activated: number }> {
+    return this.load().pipe(
+      map(db => {
+        let activated = 0;
+        for (const id of itemIds) {
+          const item = db.catalog_items.find(i => i.id === id && i.catalog_id === catalogId);
+          if (item && item.baja_logica) {
+            item.baja_logica = false;
+            activated += 1;
+          }
+        }
+        this.persist();
+        return { activated };
+      }),
+    );
+  }
+
+  deleteCatalogItem(catalogId: number, itemId: number, definitiva: boolean): Observable<{ deleted?: boolean; baja_logica?: boolean }> {
+    return this.load().pipe(
+      switchMap(db => {
+        const idx = db.catalog_items.findIndex(i => i.id === itemId && i.catalog_id === catalogId);
+        if (idx < 0) {
+          return throwError(() => ({ status: 404, error: { detail: 'Item no encontrado' } }));
+        }
+        if (definitiva) {
+          db.catalog_items.splice(idx, 1);
+          this.persist();
+          return from([{ deleted: true }]);
+        }
+        db.catalog_items[idx].baja_logica = true;
+        this.persist();
+        return from([{ baja_logica: true }]);
+      }),
+    );
+  }
+
+  bulkDeleteCatalogItems(
+    catalogId: number,
+    itemIds: number[],
+    definitiva: boolean,
+  ): Observable<{ deleted?: number; baja_logica?: number }> {
+    return this.load().pipe(
+      map(db => {
+        let count = 0;
+        if (definitiva) {
+          const before = db.catalog_items.length;
+          db.catalog_items = db.catalog_items.filter(
+            i => !(i.catalog_id === catalogId && itemIds.includes(i.id)),
+          );
+          count = before - db.catalog_items.length;
+          this.persist();
+          return { deleted: count };
+        }
+        for (const id of itemIds) {
+          const item = db.catalog_items.find(i => i.id === id && i.catalog_id === catalogId);
+          if (item && !item.baja_logica) {
+            item.baja_logica = true;
+            count += 1;
+          }
+        }
+        this.persist();
+        return { baja_logica: count };
+      }),
+    );
+  }
+
   getAiStatus(): Observable<AiStatus> {
     return from([{
       configured: false,

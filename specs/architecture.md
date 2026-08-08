@@ -290,7 +290,7 @@ GET /api/ai/status
 
 - Fuente de versión de producto: primera entrada `## vX.Y.Z` en `specs/changelog.md`.
 - Frontend: `apiBaseUrl` vía `frontend/src/environments/environment*.ts`.
-- En production / `github.io`, `useStaticDemo=true`: `ApiService` usa `DemoDataService` con `assets/demo/db.json` + mutaciones de catálogos en `localStorage` (`creador_catalogos_demo_db_v1`).
+- En production / `github.io`, `useStaticDemo=true`: `ApiService` usa `DemoDataService` con `assets/demo/db.json` + mutaciones de catálogos/items en `localStorage` (`creador_catalogos_demo_db_v1`).
 - URL pública de la UI: `https://gabrielalejandroarroyo.github.io/creador_de_Catalogos/`
 - El backend FastAPI **no** se despliega en GitHub; escritura “real” multi-usuario solo en local (`:8000`).
 

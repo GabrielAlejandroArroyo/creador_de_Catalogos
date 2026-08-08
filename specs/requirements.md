@@ -231,4 +231,4 @@ Hay scripts de seed (`seed_platforms`, `seed_objects`, `seed_changes_complexity`
 
 ### Modo demo en Pages
 
-En GitHub Pages la UI carga `frontend/src/assets/demo/db.json` (export de la BD local) y permite **ABM de catálogos** persistido en `localStorage` del navegador. Se regenera el snapshot base con `python backend/export_demo_data.py`.
+En GitHub Pages la UI carga `frontend/src/assets/demo/db.json` (export de la BD local) y permite **ABM de catálogos e items** persistido en `localStorage` del navegador. Se regenera el snapshot base con `python backend/export_demo_data.py`.

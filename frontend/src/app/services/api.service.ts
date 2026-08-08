@@ -137,36 +137,36 @@ export class ApiService {
   }
   createCatalogItem(catalogId: number, data: any): Observable<CatalogItem> {
     return this.useDemo
-      ? this.demo.unsupported('crear item')
+      ? this.demo.createCatalogItem(catalogId, data)
       : this.http.post<CatalogItem>(`${BASE}/catalogs/${catalogId}/items/`, data);
   }
   updateCatalogItem(catalogId: number, itemId: number, data: any): Observable<CatalogItem> {
     return this.useDemo
-      ? this.demo.unsupported('editar item')
+      ? this.demo.updateCatalogItem(catalogId, itemId, data)
       : this.http.put<CatalogItem>(`${BASE}/catalogs/${catalogId}/items/${itemId}`, data);
   }
   activateCatalogItem(catalogId: number, itemId: number): Observable<CatalogItem> {
     return this.useDemo
-      ? this.demo.unsupported('activar item')
+      ? this.demo.activateCatalogItem(catalogId, itemId)
       : this.http.post<CatalogItem>(`${BASE}/catalogs/${catalogId}/items/${itemId}/activar`, {});
   }
   bulkActivateCatalogItems(catalogId: number, itemIds: number[]): Observable<{ activated: number }> {
     return this.useDemo
-      ? this.demo.unsupported('activar items')
+      ? this.demo.bulkActivateCatalogItems(catalogId, itemIds)
       : this.http.post<{ activated: number }>(`${BASE}/catalogs/${catalogId}/items/bulk-activate`, {
           item_ids: itemIds,
         });
   }
   deleteCatalogItem(catalogId: number, itemId: number, definitiva: boolean): Observable<any> {
     return this.useDemo
-      ? this.demo.unsupported('eliminar item')
+      ? this.demo.deleteCatalogItem(catalogId, itemId, definitiva)
       : this.http.delete<any>(`${BASE}/catalogs/${catalogId}/items/${itemId}`, {
           params: { definitiva: String(definitiva) },
         });
   }
   bulkDeleteCatalogItems(catalogId: number, itemIds: number[], definitiva: boolean): Observable<any> {
     return this.useDemo
-      ? this.demo.unsupported('eliminar items')
+      ? this.demo.bulkDeleteCatalogItems(catalogId, itemIds, definitiva)
       : this.http.post<any>(`${BASE}/catalogs/${catalogId}/items/bulk-delete`, {
           item_ids: itemIds,
           definitiva,

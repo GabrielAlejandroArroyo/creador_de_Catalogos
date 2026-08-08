@@ -12,6 +12,25 @@ Regla: todo cambio de código del agente **debe** sumar una entrada aquí y actu
 
 ---
 
+## v1.0.12 — 2026-08-08
+
+**Tipo:** Nueva Función  
+
+**Título:** Agregar items en GitHub Pages (demo con localStorage)  
+
+**Descripción APB:**  
+En Pages, “Agregar Items” ya no falla: el alta, edición de Time, baja/activación y borrados de items funcionan sobre el demo y se guardan en el navegador.
+
+**Archivos afectados:**
+
+- `frontend/src/app/services/demo-data.service.ts`
+- `frontend/src/app/services/api.service.ts`
+- `specs/requirements.md`
+- `specs/architecture.md`
+- `specs/changelog.md`
+
+---
+
 ## v1.0.11 — 2026-08-08
 
 **Tipo:** Nueva Función  
