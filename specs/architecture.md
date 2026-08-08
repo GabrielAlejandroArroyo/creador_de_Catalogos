@@ -289,9 +289,10 @@ GET /api/ai/status
 | Pages | `.github/workflows/pages.yml` | En push a `main` (o manual): build con `--base-href /creador_de_Catalogos/` y deploy a GitHub Pages |
 
 - Fuente de versión de producto: primera entrada `## vX.Y.Z` en `specs/changelog.md`.
-- Frontend: `apiBaseUrl` vía `frontend/src/environments/environment*.ts` (dev/prod; prod apunta a API local porque el backend no se hostea en Pages).
+- Frontend: `apiBaseUrl` vía `frontend/src/environments/environment*.ts`.
+- En production / `github.io`, `useStaticDemo=true`: `ApiService` lee `assets/demo/db.json` vía `DemoDataService` (export desde `backend/export_demo_data.py`).
 - URL pública de la UI: `https://gabrielalejandroarroyo.github.io/creador_de_Catalogos/`
-- El backend FastAPI **no** se despliega en GitHub; sigue siendo local (`:8000`).
+- El backend FastAPI **no** se despliega en GitHub; escritura real solo en local (`:8000`).
 
 ---
 

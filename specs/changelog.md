@@ -12,6 +12,30 @@ Regla: todo cambio de código del agente **debe** sumar una entrada aquí y actu
 
 ---
 
+## v1.0.9 — 2026-08-08
+
+**Tipo:** Nueva Función  
+
+**Título:** Catálogos reales visibles en GitHub Pages (modo demo estático)  
+
+**Descripción APB:**  
+Se exportó la BD local (4 catálogos, 1015 items) a `assets/demo/db.json`. En Pages la app lee esos datos y muestra CATALOGO10, Catalogocopia, todoparaia, etc. Las altas/bajas online no se guardan (hace falta backend local).
+
+**Archivos afectados:**
+
+- `backend/export_demo_data.py`
+- `frontend/src/assets/demo/db.json`
+- `frontend/src/app/services/demo-data.service.ts`
+- `frontend/src/app/services/api.service.ts`
+- `frontend/src/environments/environment.ts`
+- `frontend/src/environments/environment.prod.ts`
+- `frontend/angular.json`
+- `specs/requirements.md`
+- `specs/architecture.md`
+- `specs/changelog.md`
+
+---
+
 ## v1.0.8 — 2026-08-08
 
 **Tipo:** Corrección  

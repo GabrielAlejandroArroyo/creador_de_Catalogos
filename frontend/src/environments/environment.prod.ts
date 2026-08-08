@@ -1,5 +1,6 @@
 export const environment = {
   production: true,
-  // Backend no se hostea en GitHub Pages; apuntar a API local al probar con backend en marcha.
   apiBaseUrl: 'http://localhost:8000/api',
+  // En GitHub Pages (y builds production) se sirven los catálogos exportados en assets/demo.
+  useStaticDemo: true,
 };
