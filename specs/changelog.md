@@ -12,6 +12,22 @@ Regla: todo cambio de código del agente **debe** sumar una entrada aquí y actu
 
 ---
 
+## v1.0.6 — 2026-08-08
+
+**Tipo:** Corrección  
+
+**Título:** Budgets de estilos Angular para que pase el build de CI/Pages  
+
+**Descripción APB:**  
+El build de producción en GitHub fallaba porque algunos componentes (items, layout) superaban el tope de CSS por componente. Se ampliaron los budgets para permitir el deploy.
+
+**Archivos afectados:**
+
+- `frontend/angular.json`
+- `specs/changelog.md`
+
+---
+
 ## v1.0.5 — 2026-08-08
 
 **Tipo:** Corrección  
