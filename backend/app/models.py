@@ -63,3 +63,16 @@ class CatalogItem(Base):
     code = Column(String, nullable=False)
     time = Column(Float, nullable=False, default=0)
     baja_logica = Column(Boolean, nullable=False, default=False)
+
+
+class AiConnection(Base):
+    __tablename__ = "ai_connections"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    base_url = Column(String, nullable=False, default="https://api.openai.com/v1")
+    api_key = Column(String, nullable=False, default="")
+    model_name = Column(String, nullable=False)
+    mode = Column(String, nullable=False, default="foundational")  # foundational | foundational_rag
+    is_active = Column(Boolean, nullable=False, default=False)
+    is_enabled = Column(Boolean, nullable=False, default=True)
+    updated_at = Column(String, nullable=True)

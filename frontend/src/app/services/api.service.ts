@@ -5,6 +5,8 @@ import {
   Platform, ObjectMaster, Change,
   ComplexityObject, ComplexityChange,
   Catalog, CatalogItem,
+  AiConnection, AiConnectionCreate, AiConnectionUpdate,
+  AiStatus, AiChatRequest, AiChatResponse, AiTestResponse,
 } from '../models/interfaces';
 
 const BASE = 'http://localhost:8000/api';
@@ -72,5 +74,34 @@ export class ApiService {
       item_ids: itemIds,
       definitiva,
     });
+  }
+
+  // --- AI assistant ---
+  getAiStatus(): Observable<AiStatus> {
+    return this.http.get<AiStatus>(`${BASE}/ai/status`);
+  }
+  getAiConnections(): Observable<AiConnection[]> {
+    return this.http.get<AiConnection[]>(`${BASE}/ai/connections`);
+  }
+  createAiConnection(data: AiConnectionCreate): Observable<AiConnection> {
+    return this.http.post<AiConnection>(`${BASE}/ai/connections`, data);
+  }
+  updateAiConnection(id: number, data: AiConnectionUpdate): Observable<AiConnection> {
+    return this.http.put<AiConnection>(`${BASE}/ai/connections/${id}`, data);
+  }
+  activateAiConnection(id: number): Observable<AiConnection> {
+    return this.http.post<AiConnection>(`${BASE}/ai/connections/${id}/activate`, {});
+  }
+  deleteAiConnection(id: number): Observable<void> {
+    return this.http.delete<void>(`${BASE}/ai/connections/${id}`);
+  }
+  testAiConnection(id: number): Observable<AiTestResponse> {
+    return this.http.post<AiTestResponse>(`${BASE}/ai/connections/${id}/test`, {});
+  }
+  useFreeOpensourceAi(): Observable<AiConnection> {
+    return this.http.post<AiConnection>(`${BASE}/ai/connections/use-free-opensource`, {});
+  }
+  aiChat(data: AiChatRequest): Observable<AiChatResponse> {
+    return this.http.post<AiChatResponse>(`${BASE}/ai/chat`, data);
   }
 }

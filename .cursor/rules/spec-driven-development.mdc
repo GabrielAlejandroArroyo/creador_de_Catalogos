@@ -1,0 +1,34 @@
+---
+description: Spec-Driven Development (SDD) — actualizar specs y changelog en paralelo a cualquier cambio de código
+alwaysApply: true
+---
+
+# Spec-Driven Development (regla de oro)
+
+Cada vez que escribas, modifiques o refactorices código en este repo, trabajá en paralelo de forma **obligatoria**:
+
+## A) Código actualizado
+Entregar el cambio funcional en el código.
+
+## B) Specs técnicas
+Actualizar los archivos que correspondan en `/specs`:
+- `specs/requirements.md` — si cambia comportamiento de negocio, flujos, pantallas o restricciones (qué hace / qué NO hace)
+- `specs/architecture.md` — si cambia estructura, endpoints, modelos, dependencias o flujo técnico de datos
+
+No inventar lógica futura: documentar solo lo que el código hace **después** del cambio.
+
+## C) Changelog versionado
+Agregar una entrada **nueva y correlativa** al tope (debajo del encabezado, arriba de la versión anterior) en `specs/changelog.md`:
+
+- Versión: `v1.0.1`, `v1.0.2`, … (patch +1 salvo que el usuario pida minor/major)
+- Fecha (día del cambio)
+- Tipo: `Nueva Función` | `Refactor` | `Corrección` | `Documentación`
+- Descripción APB (simple, con peras y manzanas)
+- Archivos afectados (lista)
+
+## Checklist antes de cerrar la respuesta
+- [ ] Código listo
+- [ ] Specs tocadas si aplica
+- [ ] `changelog.md` con versión nueva
+
+Si el pedido es **solo documentación** sin código, igual versionar en changelog como `Documentación`.

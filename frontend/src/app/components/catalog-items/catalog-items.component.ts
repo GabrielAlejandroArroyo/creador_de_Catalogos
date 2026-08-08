@@ -38,6 +38,16 @@ interface ItemsTreeNode {
   items?: CatalogItem[];
 }
 
+interface PlatformGroup {
+  key: string;
+  platformId: number;
+  label: string;
+  itemCount: number;
+  bajaCount: number;
+  timeTotal: number;
+  items: CatalogItem[];
+}
+
 type BajaFilter = 'all' | 'yes' | 'no';
 
 @Component({
@@ -56,15 +66,62 @@ type BajaFilter = 'all' | 'yes' | 'no';
       <div class="card">
         <h3>{{ editing ? 'Editar Time' : 'Nuevo Item' }}</h3>
 
-        <!-- Modo edición: solo Time -->
-        <div *ngIf="editing" class="edit-time-box">
+        <!-- Modo edición: parámetros + Time -->
+        <div *ngIf="editing && editingItem" class="edit-time-box">
           <div class="code-preview">
             <label>Código (no editable):</label>
-            <span class="code-value">{{ editCodePreview }}</span>
+            <span class="code-value">{{ editingItem.code }}</span>
+          </div>
+          <div class="edit-params">
+            <div class="edit-param">
+              <label>Plataforma</label>
+              <span class="edit-param-value">
+                {{ editingItem.platform_description }}
+                <span class="badge-sm">{{ editingItem.platform_initial }}</span>
+              </span>
+            </div>
+            <div class="edit-param">
+              <label>Objeto</label>
+              <span class="edit-param-value">
+                {{ editingItem.object_description }}
+                <span class="badge-sm">{{ editingItem.object_initial }}</span>
+              </span>
+            </div>
+            <div class="edit-param">
+              <label>Cambio</label>
+              <span class="edit-param-value">
+                {{ editingItem.change_description }}
+                <span class="badge-sm">{{ editingItem.change_initial }}</span>
+              </span>
+            </div>
+            <div class="edit-param">
+              <label>Complej. Objeto</label>
+              <span class="edit-param-value">
+                {{ editingItem.complexity_object_description }}
+                <span class="badge-sm">{{ editingItem.complexity_object_initial }}</span>
+              </span>
+            </div>
+            <div class="edit-param">
+              <label>Complej. Cambio</label>
+              <span class="edit-param-value">
+                {{ editingItem.complexity_change_description }}
+                <span class="badge-sm">{{ editingItem.complexity_change_initial }}</span>
+              </span>
+            </div>
           </div>
           <div class="field time-field">
             <label>Time</label>
-            <input type="number" step="any" [(ngModel)]="timeValue" class="select input-time" />
+            <input
+              type="text"
+              inputmode="decimal"
+              [(ngModel)]="timeValue"
+              class="select input-time"
+              [class.input-invalid]="isEditTimeInvalid"
+              placeholder="0"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <span *ngIf="isEditTimeInvalid" class="field-error">Formato inválido (ej: 2,31)</span>
           </div>
         </div>
 
@@ -252,6 +309,13 @@ type BajaFilter = 'all' | 'yes' | 'no';
               <button
                 type="button"
                 class="view-toggle-btn"
+                [class.active]="itemsViewMode === 'by_platform'"
+                (click)="setItemsViewMode('by_platform')">
+                Vista por plataforma
+              </button>
+              <button
+                type="button"
+                class="view-toggle-btn"
                 [class.active]="itemsViewMode === 'db'"
                 (click)="setItemsViewMode('db')">
                 Vista base de datos
@@ -263,6 +327,13 @@ type BajaFilter = 'all' | 'yes' | 'no';
                 (click)="setItemsViewMode('db_detail')">
                 Vista base de datos detallada
               </button>
+              <button
+                type="button"
+                class="view-toggle-btn"
+                [class.active]="itemsViewMode === 'export'"
+                (click)="setItemsViewMode('export')">
+                Extraer datos
+              </button>
             </div>
           </div>
           <div class="items-actions" *ngIf="!isDbReadOnlyView">
@@ -270,6 +341,28 @@ type BajaFilter = 'all' | 'yes' | 'no';
             <ng-container *ngIf="itemsViewMode === 'summary'">
               <button type="button" class="btn btn-secondary btn-sm" (click)="expandAllItemsTree()" [disabled]="!itemsTree.length">Expandir todo</button>
               <button type="button" class="btn btn-secondary btn-sm" (click)="collapseAllItemsTree()" [disabled]="!itemsTree.length">Colapsar todo</button>
+            </ng-container>
+            <ng-container *ngIf="itemsViewMode === 'by_platform'">
+              <button type="button" class="btn btn-secondary btn-sm" (click)="expandAllPlatformGroups()" [disabled]="!platformGroups.length">Expandir todo</button>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="collapseAllPlatformGroups()" [disabled]="!platformGroups.length">Colapsar todo</button>
+            </ng-container>
+            <ng-container *ngIf="itemsViewMode === 'full' && pendingTimeCount">
+              <span class="unsaved-count">{{ pendingTimeCount }} sin grabar</span>
+              <span *ngIf="invalidPendingTimeCount" class="invalid-count">{{ invalidPendingTimeCount }} inválido(s)</span>
+              <button
+                type="button"
+                class="btn btn-primary btn-sm"
+                (click)="savePendingTimes()"
+                [disabled]="savingTimes || !validPendingTimeCount">
+                {{ savingTimes ? 'Guardando...' : 'Guardar times' }}
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                (click)="discardPendingTimes()"
+                [disabled]="savingTimes">
+                Descartar
+              </button>
             </ng-container>
             <button
               (click)="activateSelection()"
@@ -288,9 +381,39 @@ type BajaFilter = 'all' | 'yes' | 'no';
           </div>
         </div>
 
+        <!-- Extraer datos: CSV / Excel -->
+        <ng-container *ngIf="itemsViewMode === 'export'">
+          <p class="view-hint muted">Descargá los items del catálogo en CSV o Excel.</p>
+          <div class="export-panel" *ngIf="items.length; else noItemsExport">
+            <div class="export-meta">
+              <span class="export-count">{{ items.length }} item(s) a exportar</span>
+            </div>
+            <div class="export-options">
+              <div class="filter-field">
+                <label for="exportColumns">Columnas</label>
+                <select id="exportColumns" class="select" [(ngModel)]="exportColumnSet">
+                  <option value="cocomo_catalog_web">Cocomo Catalog Web</option>
+                  <option value="full">Vista completa</option>
+                  <option value="db">Base de datos</option>
+                  <option value="db_detail">Base de datos detallada</option>
+                </select>
+              </div>
+            </div>
+            <div class="export-actions">
+              <button type="button" class="btn btn-primary" (click)="exportItems('csv')" [disabled]="!items.length">
+                Descargar CSV
+              </button>
+              <button type="button" class="btn btn-secondary" (click)="exportItems('excel')" [disabled]="!items.length">
+                Descargar Excel
+              </button>
+            </div>
+          </div>
+          <ng-template #noItemsExport><p class="empty">Sin items en este catálogo para exportar</p></ng-template>
+        </ng-container>
+
         <!-- Vista completa: tabla plana sin filtros -->
         <ng-container *ngIf="itemsViewMode === 'full'">
-          <p class="view-hint muted">Lista completa de items, sin filtros ni agrupación.</p>
+          <p class="view-hint muted">Lista completa de items. Editá Time con decimales según la configuración regional del sitio (ej: 2,31). Los cambios sin grabar o inválidos quedan marcados.</p>
           <div class="table-wrap items-table-wrap" *ngIf="items.length; else noItemsFull">
             <table class="table full-table">
               <thead>
@@ -319,7 +442,8 @@ type BajaFilter = 'all' | 'yes' | 'no';
               <tbody>
                 <tr *ngFor="let item of items"
                     [class.row-selected]="selectedItemIds.has(item.id)"
-                    [class.row-baja]="item.baja_logica">
+                    [class.row-baja]="item.baja_logica"
+                    [class.row-unsaved]="isTimeDirty(item)">
                   <td class="col-check">
                     <input
                       *ngIf="!item.baja_logica"
@@ -335,7 +459,28 @@ type BajaFilter = 'all' | 'yes' | 'no';
                   <td>{{ item.change_description }} <span class="badge-sm">{{ item.change_initial }}</span></td>
                   <td>{{ item.complexity_object_description }} <span class="badge-sm">{{ item.complexity_object_initial }}</span></td>
                   <td>{{ item.complexity_change_description }} <span class="badge-sm">{{ item.complexity_change_initial }}</span></td>
-                  <td>{{ item.time }}</td>
+                  <td>
+                    <div class="time-cell" *ngIf="!item.baja_logica">
+                      <input
+                        type="text"
+                        inputmode="decimal"
+                        class="input time-input-inline"
+                        [class.input-invalid]="isTimeInvalid(item)"
+                        [ngModel]="getItemTimeText(item)"
+                        (ngModelChange)="onItemTimeChange(item, $event)"
+                        (keydown.enter)="saveItemTime(item)"
+                        [attr.aria-label]="'Time de ' + item.code"
+                        [attr.aria-invalid]="isTimeInvalid(item)"
+                        [disabled]="savingTimes"
+                        placeholder="0"
+                        autocomplete="off"
+                        spellcheck="false"
+                      />
+                      <span *ngIf="isTimeInvalid(item)" class="badge-invalid" title="Formato inválido según la configuración regional">inválido</span>
+                      <span *ngIf="isTimeDirty(item) && !isTimeInvalid(item)" class="badge-unsaved" title="Cambio pendiente de grabar">sin grabar</span>
+                    </div>
+                    <ng-container *ngIf="item.baja_logica">{{ formatTimeLocale(item.time) }}</ng-container>
+                  </td>
                   <td>
                     <span *ngIf="item.baja_logica" class="badge-baja">Sí</span>
                     <span *ngIf="!item.baja_logica" class="badge-ok">No</span>
@@ -634,6 +779,98 @@ type BajaFilter = 'all' | 'yes' | 'no';
           </li>
         </ul>
         </ng-container>
+
+        <!-- Vista por plataforma: resumen desplegable + grilla CRUD -->
+        <ng-container *ngIf="itemsViewMode === 'by_platform'">
+          <p class="view-hint muted">
+            Agrupación por plataforma. Cada nodo muestra resumen (items, bajas, time total); expandí para ver la grilla y operar.
+          </p>
+          <p *ngIf="!items.length" class="empty">Sin items en este catálogo</p>
+          <ul class="items-tree" *ngIf="platformGroups.length">
+            <li *ngFor="let group of platformGroups">
+              <button type="button" class="tree-node level-platform" (click)="togglePlatformGroup(group.key)">
+                <span class="tree-chevron">{{ isPlatformGroupCollapsed(group.key) ? '▶' : '▼' }}</span>
+                <span class="tree-level-tag">Plataforma</span>
+                <span class="tree-label">{{ group.label }}</span>
+                <span class="tree-meta">{{ group.itemCount }} items</span>
+                <span *ngIf="group.bajaCount" class="tree-baja-meta">{{ group.bajaCount }} baja</span>
+                <span class="tree-meta">Time {{ formatTimeLocale(group.timeTotal) }}</span>
+              </button>
+              <div class="items-leaf" *ngIf="!isPlatformGroupCollapsed(group.key)">
+                <div class="leaf-toolbar">
+                  <label class="leaf-select-all">
+                    <input
+                      type="checkbox"
+                      [checked]="isGroupAllSelected(group.items)"
+                      [indeterminate]="isGroupSomeSelected(group.items) && !isGroupAllSelected(group.items)"
+                      (change)="toggleGroupSelect($event, group.items)"
+                      [disabled]="!groupActiveItems(group.items).length"
+                    />
+                    Seleccionar grupo
+                  </label>
+                  <span class="selection-count">
+                    {{ group.itemCount }} items · {{ group.bajaCount }} baja · Time {{ formatTimeLocale(group.timeTotal) }}
+                  </span>
+                </div>
+                <div class="table-wrap items-table-wrap">
+                  <table class="table full-table platform-group-table">
+                    <thead>
+                      <tr>
+                        <th class="col-check"></th>
+                        <th>Código</th>
+                        <th>Objeto</th>
+                        <th>Cambio</th>
+                        <th>Complej. Objeto</th>
+                        <th>Complej. Cambio</th>
+                        <th>Time</th>
+                        <th>Baja lógica</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let item of group.items"
+                          [class.row-selected]="selectedItemIds.has(item.id)"
+                          [class.row-baja]="item.baja_logica">
+                        <td class="col-check">
+                          <input
+                            *ngIf="!item.baja_logica"
+                            type="checkbox"
+                            [checked]="selectedItemIds.has(item.id)"
+                            (change)="toggleItem(item.id)"
+                            title="Seleccionar para eliminar"
+                          />
+                        </td>
+                        <td><span class="code-badge">{{ item.code }}</span></td>
+                        <td>{{ item.object_description }} <span class="badge-sm">{{ item.object_initial }}</span></td>
+                        <td>{{ item.change_description }} <span class="badge-sm">{{ item.change_initial }}</span></td>
+                        <td>{{ item.complexity_object_description }} <span class="badge-sm">{{ item.complexity_object_initial }}</span></td>
+                        <td>{{ item.complexity_change_description }} <span class="badge-sm">{{ item.complexity_change_initial }}</span></td>
+                        <td>{{ formatTimeLocale(item.time) }}</td>
+                        <td>
+                          <span *ngIf="item.baja_logica" class="badge-baja">Sí</span>
+                          <span *ngIf="!item.baja_logica" class="badge-ok">No</span>
+                        </td>
+                        <td class="actions-cell">
+                          <button *ngIf="!item.baja_logica" (click)="edit(item)" class="btn-icon" title="Editar">✏️</button>
+                          <span *ngIf="item.baja_logica" class="activate-check">
+                            <input
+                              type="checkbox"
+                              [checked]="selectedActivateIds.has(item.id)"
+                              (change)="toggleActivateSelect(item.id)"
+                              title="Seleccionar para Activar selección"
+                            />
+                            <button type="button" (click)="activate(item)" class="btn-activate" title="Activar este item">Activar</button>
+                          </span>
+                          <button (click)="remove(item)" class="btn-icon" title="Eliminar">🗑️</button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </ng-container>
       </div>
 
       <div class="modal-backdrop" *ngIf="deleteDialog.visible" (click)="abortDelete()">
@@ -692,6 +929,7 @@ type BajaFilter = 'all' | 'yes' | 'no';
     .items-table-wrap { margin-top: 4px; }
     .items-table-wrap .leaf-table { min-width: 520px; }
     .items-table-wrap .full-table { min-width: 980px; }
+    .items-table-wrap .platform-group-table { min-width: 920px; }
     .items-table-wrap .db-table { min-width: 920px; }
     .items-table-wrap .db-detail-table { min-width: 1480px; }
     .db-table th { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; text-transform: none; letter-spacing: 0; }
@@ -716,6 +954,19 @@ type BajaFilter = 'all' | 'yes' | 'no';
       box-shadow: var(--shadow-sm);
     }
     .view-hint { margin: 0 0 12px; }
+    .export-panel {
+      display: flex; flex-direction: column; gap: 16px;
+      padding: 16px; border: 1px solid var(--color-border); border-radius: 10px;
+      background: var(--color-surface-muted); max-width: 520px;
+    }
+    .export-meta { display: flex; align-items: center; gap: 8px; }
+    .export-count {
+      font-size: 0.9rem; font-weight: 600; color: var(--color-text);
+    }
+    .export-options { display: flex; flex-wrap: wrap; gap: 10px; }
+    .export-options .filter-field { flex: 1; min-width: min(100%, 260px); }
+    .export-options .select { width: 100%; }
+    .export-actions { display: flex; flex-wrap: wrap; gap: 8px; }
     .actions-cell { white-space: nowrap; }
     .modal-backdrop {
       position: fixed; inset: 0; background: var(--color-backdrop);
@@ -773,6 +1024,39 @@ type BajaFilter = 'all' | 'yes' | 'no';
     .col-check { width: 36px; text-align: center; }
     .row-selected { background: color-mix(in srgb, var(--color-primary) 12%, transparent); }
     .row-baja { opacity: 0.65; background: var(--color-surface-muted); }
+    .row-unsaved { background: color-mix(in srgb, var(--color-warning) 10%, transparent); }
+    .time-cell { display: flex; align-items: center; gap: 6px; min-width: 132px; }
+    .time-input-inline {
+      width: 84px; flex: 0 0 auto; padding: 5px 8px; font-size: 0.85rem;
+    }
+    .time-input-inline.input-invalid,
+    .input-time.input-invalid {
+      border-color: var(--color-danger);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 22%, transparent);
+    }
+    .badge-unsaved {
+      background: #fef3c7; color: #92400e; padding: 2px 7px; border-radius: 10px;
+      font-size: 0.68rem; font-weight: 700; white-space: nowrap; letter-spacing: 0.01em;
+    }
+    .badge-invalid {
+      background: #fee2e2; color: #991b1b; padding: 2px 7px; border-radius: 10px;
+      font-size: 0.68rem; font-weight: 700; white-space: nowrap;
+    }
+    :host-context([data-theme="dark"]) .badge-unsaved {
+      background: #78350f; color: #fde68a;
+    }
+    :host-context([data-theme="dark"]) .badge-invalid {
+      background: #7f1d1d; color: #fecaca;
+    }
+    .unsaved-count {
+      font-size: 0.8rem; font-weight: 600; color: var(--color-warning);
+    }
+    .invalid-count {
+      font-size: 0.8rem; font-weight: 600; color: var(--color-danger);
+    }
+    .field-error {
+      font-size: 0.75rem; color: var(--color-danger); font-weight: 600;
+    }
     .badge-baja { background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
     .badge-ok { background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
     .btn-icon:disabled { opacity: 0.35; cursor: not-allowed; }
@@ -813,6 +1097,20 @@ type BajaFilter = 'all' | 'yes' | 'no';
     .time-field { margin-top: 14px; max-width: 220px; }
     .input-time { width: 100%; }
     .edit-time-box { display: flex; flex-direction: column; gap: 12px; }
+    .edit-params {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+      gap: 10px 14px;
+    }
+    .edit-param { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .edit-param label {
+      font-size: 0.75rem; color: var(--color-text-muted); font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.02em;
+    }
+    .edit-param-value {
+      font-size: 0.9rem; color: var(--color-text); display: flex; align-items: center;
+      gap: 6px; flex-wrap: wrap; min-height: 28px;
+    }
     .checkbox-box { border: 1px solid var(--color-border); border-radius: 6px; padding: 10px; max-height: 180px; overflow-y: auto; background: var(--color-surface-muted); }
     .checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--color-text); padding: 4px 0; cursor: pointer; }
     .muted { font-size: 0.85rem; color: var(--color-text-faint); margin: 0; }
@@ -983,27 +1281,32 @@ export class CatalogItemsComponent implements OnInit {
   complexityChanges: ComplexityChange[] = [];
 
   platformId = 0;
-  timeValue: number = 0;
+  timeValue = '0';
   selectedObjectIds = new Set<number>();
   selectedChangeIds = new Set<number>();
   selectedComplexityObjectIds = new Set<number>();
   selectedComplexityChangeIds = new Set<number>();
 
   editing: number | null = null;
+  editingItem: CatalogItem | null = null;
   error = '';
   success = '';
   saving = false;
   deleting = false;
   activating = false;
-  editCodePreview = '';
   selectedItemIds = new Set<number>();
   selectedActivateIds = new Set<number>();
+  pendingTimes = new Map<number, string>();
+  savingTimes = false;
   previewPanelCollapsed = false;
   collapsedTreeKeys = new Set<string>();
   excludedCodes = new Set<string>();
   itemsCollapsedKeys = new Set<string>();
   private itemsTreeInitialized = false;
-  itemsViewMode: 'full' | 'summary' | 'db' | 'db_detail' = 'full';
+  platformCollapsedKeys = new Set<string>();
+  private platformGroupsInitialized = false;
+  itemsViewMode: 'full' | 'summary' | 'db' | 'db_detail' | 'export' | 'by_platform' = 'full';
+  exportColumnSet: 'cocomo_catalog_web' | 'full' | 'db' | 'db_detail' = 'cocomo_catalog_web';
   itemFilters: {
     code: string;
     platformId: number;
@@ -1209,13 +1512,23 @@ export class CatalogItemsComponent implements OnInit {
   loadItems() {
     this.api.getCatalogItems(this.catalogId).subscribe(d => {
       this.items = d;
+      const byId = new Map(d.map(i => [i.id, i]));
       const activeIds = new Set(d.filter(i => !i.baja_logica).map(i => i.id));
       const bajaIds = new Set(d.filter(i => i.baja_logica).map(i => i.id));
       this.selectedItemIds = new Set([...this.selectedItemIds].filter(id => activeIds.has(id)));
       this.selectedActivateIds = new Set([...this.selectedActivateIds].filter(id => bajaIds.has(id)));
+      this.reconcilePendingTimes(byId);
       if (!this.itemsTreeInitialized && d.length) {
         this.itemsTreeInitialized = true;
         this.collapseItemsBelowPlatform();
+      }
+      const platformKeys = new Set(this.platformGroups.map(g => g.key));
+      this.platformCollapsedKeys = new Set(
+        [...this.platformCollapsedKeys].filter(key => platformKeys.has(key)),
+      );
+      if (this.itemsViewMode === 'by_platform' && !this.platformGroupsInitialized && d.length) {
+        this.platformGroupsInitialized = true;
+        this.collapseAllPlatformGroups();
       }
     });
   }
@@ -1385,9 +1698,9 @@ export class CatalogItemsComponent implements OnInit {
     };
   }
 
-  setItemsViewMode(mode: 'full' | 'summary' | 'db' | 'db_detail') {
+  setItemsViewMode(mode: 'full' | 'summary' | 'db' | 'db_detail' | 'export' | 'by_platform') {
     this.itemsViewMode = mode;
-    if (mode === 'db' || mode === 'db_detail') {
+    if (mode === 'db' || mode === 'db_detail' || mode === 'export') {
       this.selectedItemIds = new Set();
       this.selectedActivateIds = new Set();
       if (this.editing) this.cancelEdit();
@@ -1396,10 +1709,360 @@ export class CatalogItemsComponent implements OnInit {
       this.itemsTreeInitialized = true;
       this.collapseItemsBelowPlatform();
     }
+    if (mode === 'by_platform' && this.items.length) {
+      if (!this.platformGroupsInitialized) {
+        this.platformGroupsInitialized = true;
+        this.collapseAllPlatformGroups();
+      }
+    }
+  }
+
+  get platformGroups(): PlatformGroup[] {
+    const map = new Map<number, CatalogItem[]>();
+    for (const item of this.items) {
+      if (!map.has(item.platform_id)) map.set(item.platform_id, []);
+      map.get(item.platform_id)!.push(item);
+    }
+    const groups: PlatformGroup[] = [];
+    for (const [platformId, groupItems] of map) {
+      groupItems.sort((a, b) => a.code.localeCompare(b.code));
+      const sample = groupItems[0];
+      groups.push({
+        key: `platform-group-${platformId}`,
+        platformId,
+        label: `${sample.platform_description} (${sample.platform_initial})`,
+        itemCount: groupItems.length,
+        bajaCount: groupItems.filter(i => i.baja_logica).length,
+        timeTotal: groupItems.reduce((sum, i) => sum + (Number(i.time) || 0), 0),
+        items: groupItems,
+      });
+    }
+    return groups.sort((a, b) => a.label.localeCompare(b.label));
+  }
+
+  isPlatformGroupCollapsed(key: string): boolean {
+    return this.platformCollapsedKeys.has(key);
+  }
+
+  togglePlatformGroup(key: string) {
+    if (this.platformCollapsedKeys.has(key)) this.platformCollapsedKeys.delete(key);
+    else this.platformCollapsedKeys.add(key);
+    this.platformCollapsedKeys = new Set(this.platformCollapsedKeys);
+  }
+
+  expandAllPlatformGroups() {
+    this.platformCollapsedKeys = new Set();
+  }
+
+  collapseAllPlatformGroups() {
+    this.platformCollapsedKeys = new Set(this.platformGroups.map(g => g.key));
   }
 
   get isDbReadOnlyView(): boolean {
-    return this.itemsViewMode === 'db' || this.itemsViewMode === 'db_detail';
+    return this.itemsViewMode === 'db' || this.itemsViewMode === 'db_detail' || this.itemsViewMode === 'export';
+  }
+
+  get pendingTimeCount(): number {
+    return this.pendingTimes.size;
+  }
+
+  get validPendingTimeCount(): number {
+    let count = 0;
+    for (const raw of this.pendingTimes.values()) {
+      if (this.parseLocaleNumber(raw) !== null) count += 1;
+    }
+    return count;
+  }
+
+  get invalidPendingTimeCount(): number {
+    return this.pendingTimeCount - this.validPendingTimeCount;
+  }
+
+  get isEditTimeInvalid(): boolean {
+    return this.parseLocaleNumber(this.timeValue) === null;
+  }
+
+  private get timeLocale(): string {
+    return (typeof document !== 'undefined' && document.documentElement.lang) || 'es';
+  }
+
+  private get decimalSeparator(): string {
+    const parts = new Intl.NumberFormat(this.timeLocale).formatToParts(1.1);
+    return parts.find(p => p.type === 'decimal')?.value ?? ',';
+  }
+
+  formatTimeLocale(value: number | null | undefined): string {
+    return new Intl.NumberFormat(this.timeLocale, {
+      useGrouping: false,
+      maximumFractionDigits: 10,
+    }).format(Number(value) || 0);
+  }
+
+  parseLocaleNumber(raw: string): number | null {
+    const text = String(raw ?? '').trim().replace(/\s/g, '');
+    if (text === '') return null;
+
+    const decimal = this.decimalSeparator;
+    const escaped = decimal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(`^-?\\d+(${escaped}\\d+)?$`);
+    if (!pattern.test(text)) return null;
+
+    const normalized = decimal === '.' ? text : text.replace(decimal, '.');
+    const value = Number(normalized);
+    return Number.isFinite(value) ? value : null;
+  }
+
+  getItemTimeText(item: CatalogItem): string {
+    return this.pendingTimes.has(item.id)
+      ? this.pendingTimes.get(item.id)!
+      : this.formatTimeLocale(item.time);
+  }
+
+  isTimeDirty(item: CatalogItem): boolean {
+    return this.pendingTimes.has(item.id);
+  }
+
+  isTimeInvalid(item: CatalogItem): boolean {
+    if (!this.pendingTimes.has(item.id)) return false;
+    return this.parseLocaleNumber(this.pendingTimes.get(item.id)!) === null;
+  }
+
+  onItemTimeChange(item: CatalogItem, value: string) {
+    if (item.baja_logica) return;
+
+    const raw = String(value ?? '');
+    const parsed = this.parseLocaleNumber(raw);
+    const original = Number(item.time ?? 0);
+    const nextMap = new Map(this.pendingTimes);
+
+    if (parsed !== null && parsed === original) nextMap.delete(item.id);
+    else nextMap.set(item.id, raw);
+    this.pendingTimes = nextMap;
+  }
+
+  saveItemTime(item: CatalogItem) {
+    if (!this.isTimeDirty(item) || this.savingTimes) return;
+    const raw = this.pendingTimes.get(item.id);
+    if (raw === undefined) return;
+
+    const time = this.parseLocaleNumber(raw);
+    if (time === null) {
+      this.error = `Time de ${item.code} inválido. Usá el formato regional (ej: 2,31).`;
+      return;
+    }
+
+    this.savingTimes = true;
+    this.error = '';
+    this.api.updateCatalogItem(this.catalogId, item.id, { time }).subscribe({
+      next: () => {
+        this.pendingTimes = new Map([...this.pendingTimes].filter(([id]) => id !== item.id));
+        this.savingTimes = false;
+        this.loadItems();
+        this.success = `Time de ${item.code} actualizado`;
+      },
+      error: (e) => {
+        this.savingTimes = false;
+        this.error = e.error?.detail || 'Error al guardar time';
+      },
+    });
+  }
+
+  savePendingTimes() {
+    const entries = Array.from(this.pendingTimes.entries())
+      .map(([id, raw]) => ({ id, raw, time: this.parseLocaleNumber(raw) }))
+      .filter((e): e is { id: number; raw: string; time: number } => e.time !== null);
+
+    if (!entries.length || this.savingTimes) return;
+
+    const skippedInvalid = this.invalidPendingTimeCount;
+    this.savingTimes = true;
+    this.error = '';
+    this.success = '';
+    from(entries).pipe(
+      concatMap(({ id, time }) => this.api.updateCatalogItem(this.catalogId, id, { time })),
+      toArray(),
+    ).subscribe({
+      next: (results) => {
+        const savedIds = new Set(entries.map(e => e.id));
+        this.pendingTimes = new Map([...this.pendingTimes].filter(([id]) => !savedIds.has(id)));
+        this.savingTimes = false;
+        this.loadItems();
+        this.success = skippedInvalid
+          ? `${results.length} time(s) actualizados. ${skippedInvalid} inválido(s) sin grabar.`
+          : `${results.length} time(s) actualizados`;
+      },
+      error: (e) => {
+        this.savingTimes = false;
+        this.error = e.error?.detail || 'Error al guardar times';
+        this.loadItems();
+      },
+    });
+  }
+
+  discardPendingTimes() {
+    this.pendingTimes = new Map();
+  }
+
+  private reconcilePendingTimes(byId: Map<number, CatalogItem>) {
+    if (!this.pendingTimes.size) return;
+    const next = new Map<number, string>();
+    for (const [id, raw] of this.pendingTimes) {
+      const item = byId.get(id);
+      if (!item || item.baja_logica) continue;
+      const parsed = this.parseLocaleNumber(raw);
+      if (parsed === null) {
+        next.set(id, raw);
+        continue;
+      }
+      if (parsed !== Number(item.time ?? 0)) next.set(id, raw);
+    }
+    this.pendingTimes = next;
+  }
+
+  exportItems(format: 'csv' | 'excel') {
+    if (!this.items.length) return;
+
+    const { headers, rows } = this.buildExportTable(this.exportColumnSet);
+    const catalogLabel = (this.catalog?.initial || this.catalog?.description || `catalogo_${this.catalogId}`)
+      .replace(/[^\w\-]+/g, '_');
+    const stamp = new Date().toISOString().slice(0, 10);
+    const baseName = `items_${catalogLabel}_${stamp}`;
+
+    if (format === 'csv') {
+      this.downloadBlob(this.toCsv(headers, rows), `${baseName}.csv`, 'text/csv;charset=utf-8');
+      return;
+    }
+
+    this.downloadBlob(
+      this.toExcelXml(headers, rows),
+      `${baseName}.xls`,
+      'application/vnd.ms-excel;charset=utf-8'
+    );
+  }
+
+  private buildExportTable(
+    columnSet: 'cocomo_catalog_web' | 'full' | 'db' | 'db_detail'
+  ): { headers: string[]; rows: string[][] } {
+    if (columnSet === 'cocomo_catalog_web') {
+      return {
+        headers: [
+          'PlatformDescription', 'PlatformInitial', 'ObjectDecription', 'ObjectInitial',
+          'ChangeDecription', 'ChangeInitial', 'ComplexityObjectDecription', 'ComplexityObjectInitial',
+          'ComplexityChangeDecription', 'ComplexityChangeInitial', 'Code', 'Time',
+        ],
+        rows: this.items.map(i => [
+          i.platform_description, i.platform_initial,
+          i.object_description, i.object_initial,
+          i.change_description, i.change_initial,
+          i.complexity_object_description, i.complexity_object_initial,
+          i.complexity_change_description, i.complexity_change_initial,
+          i.code, String(i.time),
+        ]),
+      };
+    }
+
+    if (columnSet === 'db') {
+      return {
+        headers: [
+          'id', 'catalog_id', 'platform_id', 'object_id', 'change_id',
+          'complexity_object_id', 'complexity_change_id', 'code', 'time', 'baja_logica',
+        ],
+        rows: this.items.map(i => [
+          String(i.id), String(i.catalog_id), String(i.platform_id), String(i.object_id), String(i.change_id),
+          String(i.complexity_object_id), String(i.complexity_change_id), i.code, String(i.time), i.baja_logica ? '1' : '0',
+        ]),
+      };
+    }
+
+    if (columnSet === 'db_detail') {
+      return {
+        headers: [
+          'id', 'catalog_id', 'platform_id', 'plataforma', 'plataforma_inicial',
+          'object_id', 'objeto', 'objeto_inicial', 'change_id', 'cambio', 'cambio_inicial',
+          'complexity_object_id', 'complejidad_objeto', 'complejidad_objeto_inicial',
+          'complexity_change_id', 'complejidad_cambio', 'complejidad_cambio_inicial',
+          'code', 'time', 'baja_logica',
+        ],
+        rows: this.items.map(i => [
+          String(i.id), String(i.catalog_id),
+          String(i.platform_id), i.platform_description, i.platform_initial,
+          String(i.object_id), i.object_description, i.object_initial,
+          String(i.change_id), i.change_description, i.change_initial,
+          String(i.complexity_object_id), i.complexity_object_description, i.complexity_object_initial,
+          String(i.complexity_change_id), i.complexity_change_description, i.complexity_change_initial,
+          i.code, String(i.time), i.baja_logica ? '1' : '0',
+        ]),
+      };
+    }
+
+    return {
+      headers: [
+        'Código', 'Plataforma', 'Objeto', 'Cambio',
+        'Complej. Objeto', 'Complej. Cambio', 'Time', 'Baja lógica',
+      ],
+      rows: this.items.map(i => [
+        i.code,
+        `${i.platform_description} ${i.platform_initial}`.trim(),
+        `${i.object_description} ${i.object_initial}`.trim(),
+        `${i.change_description} ${i.change_initial}`.trim(),
+        `${i.complexity_object_description} ${i.complexity_object_initial}`.trim(),
+        `${i.complexity_change_description} ${i.complexity_change_initial}`.trim(),
+        String(i.time),
+        i.baja_logica ? 'Sí' : 'No',
+      ]),
+    };
+  }
+
+  private toCsv(headers: string[], rows: string[][]): string {
+    const escape = (value: string) => {
+      if (/[",\n\r]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+      return value;
+    };
+    const lines = [headers.map(escape).join(','), ...rows.map(r => r.map(escape).join(','))];
+    return `\uFEFF${lines.join('\r\n')}`;
+  }
+
+  private toExcelXml(headers: string[], rows: string[][]): string {
+    const escapeXml = (value: string) =>
+      value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+
+    const headerCells = headers.map(h => `<Cell><Data ss:Type="String">${escapeXml(h)}</Data></Cell>`).join('');
+    const bodyRows = rows.map(r => {
+      const cells = r.map(v => {
+        const isNumber = v !== '' && /^-?\d+(\.\d+)?$/.test(v);
+        const type = isNumber ? 'Number' : 'String';
+        return `<Cell><Data ss:Type="${type}">${escapeXml(v)}</Data></Cell>`;
+      }).join('');
+      return `<Row>${cells}</Row>`;
+    }).join('');
+
+    return [
+      '<?xml version="1.0"?>',
+      '<?mso-application progid="Excel.Sheet"?>',
+      '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"',
+      ' xmlns:o="urn:schemas-microsoft-com:office:office"',
+      ' xmlns:x="urn:schemas-microsoft-com:office:excel"',
+      ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"',
+      ' xmlns:html="http://www.w3.org/TR/REC-html40">',
+      '<Worksheet ss:Name="Items"><Table>',
+      `<Row>${headerCells}</Row>`,
+      bodyRows,
+      '</Table></Worksheet></Workbook>',
+    ].join('');
+  }
+
+  private downloadBlob(content: string, filename: string, mimeType: string) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
 
   isItemsTreeCollapsed(key: string): boolean {
@@ -1645,19 +2308,18 @@ export class CatalogItemsComponent implements OnInit {
     this.selectedComplexityObjectIds.clear();
     this.selectedComplexityChangeIds.clear();
     this.excludedCodes = new Set();
-    this.timeValue = 0;
+    this.timeValue = '0';
     this.error = '';
     this.success = '';
   }
 
   private parseTime(): number {
-    const value = Number(this.timeValue);
-    return Number.isFinite(value) ? value : 0;
+    return this.parseLocaleNumber(this.timeValue) ?? 0;
   }
 
   isFormValid(): boolean {
     if (this.editing) {
-      return this.editing > 0 && Number.isFinite(Number(this.timeValue));
+      return this.editing > 0 && this.parseLocaleNumber(this.timeValue) !== null;
     }
     return this.platformId > 0
       && this.includedCodes.length > 0
@@ -1669,7 +2331,12 @@ export class CatalogItemsComponent implements OnInit {
     this.success = '';
 
     if (this.editing) {
-      this.api.updateCatalogItem(this.catalogId, this.editing, { time: this.parseTime() }).subscribe({
+      const time = this.parseLocaleNumber(this.timeValue);
+      if (time === null) {
+        this.error = 'Time inválido. Usá el formato regional (ej: 2,31).';
+        return;
+      }
+      this.api.updateCatalogItem(this.catalogId, this.editing, { time }).subscribe({
         next: () => { this.loadItems(); this.cancelEdit(); this.success = 'Time actualizado'; },
         error: (e) => this.error = e.error?.detail || 'Error al guardar',
       });
@@ -1725,8 +2392,8 @@ export class CatalogItemsComponent implements OnInit {
       return;
     }
     this.editing = item.id;
-    this.editCodePreview = item.code;
-    this.timeValue = item.time ?? 0;
+    this.editingItem = item;
+    this.timeValue = this.formatTimeLocale(item.time ?? 0);
     this.error = '';
     this.success = '';
   }
@@ -1748,8 +2415,8 @@ export class CatalogItemsComponent implements OnInit {
 
   cancelEdit() {
     this.editing = null;
-    this.editCodePreview = '';
-    this.timeValue = 0;
+    this.editingItem = null;
+    this.timeValue = '0';
     this.error = '';
   }
 

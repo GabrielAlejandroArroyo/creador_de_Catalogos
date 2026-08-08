@@ -7,6 +7,7 @@ import { ComplexityObjectsComponent } from './components/masters/complexity-obje
 import { ComplexityChangesComponent } from './components/masters/complexity-changes/complexity-changes.component';
 import { CatalogsComponent } from './components/catalogs/catalogs.component';
 import { CatalogItemsComponent } from './components/catalog-items/catalog-items.component';
+import { AiSettingsComponent } from './components/ai-settings/ai-settings.component';
 
 export const routes: Routes = [
   {
@@ -21,6 +22,7 @@ export const routes: Routes = [
       { path: 'complexity-changes', component: ComplexityChangesComponent },
       { path: 'catalogs', component: CatalogsComponent },
       { path: 'catalogs/:catalogId/items', component: CatalogItemsComponent },
+      { path: 'ai-settings', component: AiSettingsComponent },
     ],
   },
 ];

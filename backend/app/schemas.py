@@ -1,5 +1,5 @@
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 # --- Platform ---
@@ -142,3 +142,71 @@ class CatalogItemResponse(BaseModel):
     complexity_change_description: str = ""
     complexity_change_initial: str = ""
     model_config = {"from_attributes": True}
+
+
+# --- AI connections ---
+class AiConnectionCreate(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+    name: str
+    base_url: str = "http://127.0.0.1:11434/v1"
+    api_key: Optional[str] = ""  # opcional si es Ollama/local gratis
+    model_name: str
+    mode: str = "foundational"  # foundational | foundational_rag
+    is_enabled: bool = True
+    activate: bool = False
+
+
+class AiConnectionUpdate(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+    name: Optional[str] = None
+    base_url: Optional[str] = None
+    api_key: Optional[str] = None  # vacío = sin key (gratis/local)
+    model_name: Optional[str] = None
+    mode: Optional[str] = None
+    is_enabled: Optional[bool] = None
+
+
+class AiConnectionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
+    id: int
+    name: str
+    base_url: str
+    api_key_masked: str
+    model_name: str
+    mode: str
+    is_active: bool
+    is_enabled: bool
+    updated_at: Optional[str] = None
+
+
+class AiStatusResponse(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+    configured: bool
+    active_connection_id: Optional[int] = None
+    active_connection_name: Optional[str] = None
+    mode: Optional[str] = None
+    model_name: Optional[str] = None
+    connections_count: int = 0
+    provider_kind: str = "rag_offline"  # custom | ollama_free | rag_offline
+    using_free_opensource: bool = True
+    requires_api_key: bool = False
+
+
+class AiChatRequest(BaseModel):
+    message: str
+    concept: Optional[str] = None
+
+
+class AiChatResponse(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+    reply: str
+    mode: str
+    connection_name: str
+    model_name: str
+    sources: List[str] = []
+    provider_kind: str = "custom"
+
+
+class AiTestResponse(BaseModel):
+    ok: bool
+    detail: str

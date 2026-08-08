@@ -4,11 +4,12 @@ import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { ThemeMode, ThemeService } from '../../services/theme.service';
+import { AiAssistantComponent } from '../ai-assistant/ai-assistant.component';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, AiAssistantComponent],
   template: `
     <div class="app-shell" [class.nav-open]="navOpen">
       <header class="topbar">
@@ -62,6 +63,8 @@ import { ThemeMode, ThemeService } from '../../services/theme.service';
           <li><a routerLink="/complexity-changes" routerLinkActive="active" (click)="closeNav()">Complejidad Cambio</a></li>
           <li class="nav-section">Gestión</li>
           <li><a routerLink="/catalogs" routerLinkActive="active" (click)="closeNav()">Catálogos</a></li>
+          <li class="nav-section">IA</li>
+          <li><a routerLink="/ai-settings" routerLinkActive="active" (click)="closeNav()">Mantenimiento IA</a></li>
         </ul>
       </nav>
 
@@ -86,6 +89,8 @@ import { ThemeMode, ThemeService } from '../../services/theme.service';
           <router-outlet></router-outlet>
         </div>
       </main>
+
+      <app-ai-assistant></app-ai-assistant>
     </div>
   `,
   styles: [`

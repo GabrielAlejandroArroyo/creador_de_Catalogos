@@ -7,6 +7,7 @@ from app.routers import (
     platforms, objects, changes,
     complexity_objects, complexity_changes,
     catalogs, catalog_items,
+    ai,
 )
 
 
@@ -92,6 +93,7 @@ app.include_router(complexity_objects.router)
 app.include_router(complexity_changes.router)
 app.include_router(catalogs.router)
 app.include_router(catalog_items.router)
+app.include_router(ai.router)
 
 
 @app.get("/")
