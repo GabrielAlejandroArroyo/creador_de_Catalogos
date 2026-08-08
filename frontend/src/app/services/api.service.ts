@@ -117,13 +117,13 @@ export class ApiService {
     return this.useDemo ? this.demo.getCatalogs() : this.http.get<Catalog[]>(`${BASE}/catalogs/`);
   }
   createCatalog(data: Partial<Catalog>): Observable<Catalog> {
-    return this.useDemo ? this.demo.unsupported('crear catálogo') : this.http.post<Catalog>(`${BASE}/catalogs/`, data);
+    return this.useDemo ? this.demo.createCatalog(data) : this.http.post<Catalog>(`${BASE}/catalogs/`, data);
   }
   updateCatalog(id: number, data: Partial<Catalog>): Observable<Catalog> {
-    return this.useDemo ? this.demo.unsupported('editar catálogo') : this.http.put<Catalog>(`${BASE}/catalogs/${id}`, data);
+    return this.useDemo ? this.demo.updateCatalog(id, data) : this.http.put<Catalog>(`${BASE}/catalogs/${id}`, data);
   }
   deleteCatalog(id: number): Observable<void> {
-    return this.useDemo ? this.demo.unsupported('eliminar catálogo') : this.http.delete<void>(`${BASE}/catalogs/${id}`);
+    return this.useDemo ? this.demo.deleteCatalog(id) : this.http.delete<void>(`${BASE}/catalogs/${id}`);
   }
   getCatalog(id: number): Observable<Catalog> {
     return this.useDemo ? this.demo.getCatalog(id) : this.http.get<Catalog>(`${BASE}/catalogs/${id}`);

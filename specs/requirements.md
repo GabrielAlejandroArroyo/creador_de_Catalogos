@@ -227,8 +227,8 @@ Hay scripts de seed (`seed_platforms`, `seed_objects`, `seed_changes_complexity`
 
 1. **No** publica ni ejecuta el backend en GitHub/Pages.
 2. **No** crea versiones si el tag ya existe (idempotente).
-3. **No** permite guardar altas/ediciones/bajas en Pages (modo demo de solo lectura con snapshot exportado).
+3. **No** sincroniza cambios de Pages con el SQLite local ni con otros usuarios (cada navegador tiene su copia en `localStorage`).
 
-### Modo demo en Pages (lectura)
+### Modo demo en Pages
 
-En GitHub Pages la UI carga `frontend/src/assets/demo/db.json` (export de la BD local). Se regenera con `python backend/export_demo_data.py`.
+En GitHub Pages la UI carga `frontend/src/assets/demo/db.json` (export de la BD local) y permite **ABM de catálogos** persistido en `localStorage` del navegador. Se regenera el snapshot base con `python backend/export_demo_data.py`.

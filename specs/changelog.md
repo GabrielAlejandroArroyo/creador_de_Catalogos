@@ -12,6 +12,25 @@ Regla: todo cambio de código del agente **debe** sumar una entrada aquí y actu
 
 ---
 
+## v1.0.11 — 2026-08-08
+
+**Tipo:** Nueva Función  
+
+**Título:** Crear / editar / eliminar catálogos en GitHub Pages (demo con localStorage)  
+
+**Descripción APB:**  
+En Pages ya se puede agregar un catálogo nuevo (ej. catalogonuevo). Se guarda en el navegador (localStorage) sobre el snapshot demo. No es el servidor real: es por equipo/navegador.
+
+**Archivos afectados:**
+
+- `frontend/src/app/services/demo-data.service.ts`
+- `frontend/src/app/services/api.service.ts`
+- `specs/requirements.md`
+- `specs/architecture.md`
+- `specs/changelog.md`
+
+---
+
 ## v1.0.10 — 2026-08-08
 
 **Tipo:** Corrección  

@@ -15,12 +15,14 @@ interface DemoDb {
   complexity_objects: ComplexityObject[];
   complexity_changes: ComplexityChange[];
   catalogs: Catalog[];
-  catalog_items: Array<Omit<CatalogItem, 
+  catalog_items: Array<Omit<CatalogItem,
     'platform_description' | 'platform_initial' | 'object_description' | 'object_initial' |
     'change_description' | 'change_initial' | 'complexity_object_description' |
     'complexity_object_initial' | 'complexity_change_description' | 'complexity_change_initial'
   > & Partial<CatalogItem>>;
 }
+
+const STORAGE_KEY = 'creador_catalogos_demo_db_v1';
 
 @Injectable({ providedIn: 'root' })
 export class DemoDataService {
@@ -35,18 +37,37 @@ export class DemoDataService {
     return new URL('assets/demo/db.json', base).toString();
   }
 
+  private persist(): void {
+    if (!this.memory || typeof localStorage === 'undefined') return;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.memory));
+  }
+
+  private readStored(): DemoDb | null {
+    if (typeof localStorage === 'undefined') return null;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) as DemoDb : null;
+    } catch {
+      return null;
+    }
+  }
+
   private load(): Observable<DemoDb> {
     if (this.memory) return from([this.memory]);
     if (!this.db$) {
       this.db$ = this.http.get<DemoDb>(this.demoDbUrl()).pipe(
         map(db => {
-          this.memory = structuredClone(db);
+          this.memory = this.readStored() ?? structuredClone(db);
           return this.memory!;
         }),
         shareReplay(1),
       );
     }
     return this.db$;
+  }
+
+  private nextId(ids: number[]): number {
+    return (ids.length ? Math.max(...ids) : 0) + 1;
   }
 
   private enrichItem(db: DemoDb, item: DemoDb['catalog_items'][number]): CatalogItem {
@@ -100,7 +121,7 @@ export class DemoDataService {
   }
 
   getCatalogs(): Observable<Catalog[]> {
-    return this.load().pipe(map(db => db.catalogs));
+    return this.load().pipe(map(db => [...db.catalogs]));
   }
 
   getCatalog(id: number): Observable<Catalog> {
@@ -108,8 +129,69 @@ export class DemoDataService {
       switchMap(db => {
         const catalog = db.catalogs.find(c => c.id === id);
         return catalog
-          ? from([catalog])
+          ? from([{ ...catalog }])
           : throwError(() => ({ status: 404, error: { detail: 'Catálogo no encontrado' } }));
+      }),
+    );
+  }
+
+  createCatalog(data: Partial<Catalog>): Observable<Catalog> {
+    return this.load().pipe(
+      switchMap(db => {
+        const description = (data.description || '').trim();
+        const initial = (data.initial || '').trim();
+        if (!description || !initial) {
+          return throwError(() => ({ status: 400, error: { detail: 'Todos los campos son requeridos' } }));
+        }
+        if (db.catalogs.some(c => c.initial.toLowerCase() === initial.toLowerCase())) {
+          return throwError(() => ({ status: 400, error: { detail: 'Ya existe un catálogo con esa sigla' } }));
+        }
+        const created: Catalog = {
+          id: this.nextId(db.catalogs.map(c => c.id)),
+          description,
+          initial,
+        };
+        db.catalogs.push(created);
+        this.persist();
+        return from([{ ...created }]);
+      }),
+    );
+  }
+
+  updateCatalog(id: number, data: Partial<Catalog>): Observable<Catalog> {
+    return this.load().pipe(
+      switchMap(db => {
+        const catalog = db.catalogs.find(c => c.id === id);
+        if (!catalog) {
+          return throwError(() => ({ status: 404, error: { detail: 'Catálogo no encontrado' } }));
+        }
+        const description = (data.description ?? catalog.description).trim();
+        const initial = (data.initial ?? catalog.initial).trim();
+        if (!description || !initial) {
+          return throwError(() => ({ status: 400, error: { detail: 'Todos los campos son requeridos' } }));
+        }
+        if (db.catalogs.some(c => c.id !== id && c.initial.toLowerCase() === initial.toLowerCase())) {
+          return throwError(() => ({ status: 400, error: { detail: 'Ya existe un catálogo con esa sigla' } }));
+        }
+        catalog.description = description;
+        catalog.initial = initial;
+        this.persist();
+        return from([{ ...catalog }]);
+      }),
+    );
+  }
+
+  deleteCatalog(id: number): Observable<void> {
+    return this.load().pipe(
+      switchMap(db => {
+        const idx = db.catalogs.findIndex(c => c.id === id);
+        if (idx < 0) {
+          return throwError(() => ({ status: 404, error: { detail: 'Catálogo no encontrado' } }));
+        }
+        db.catalogs.splice(idx, 1);
+        db.catalog_items = db.catalog_items.filter(i => i.catalog_id !== id);
+        this.persist();
+        return from([undefined as void]);
       }),
     );
   }
