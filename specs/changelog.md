@@ -12,6 +12,23 @@ Regla: todo cambio de código del agente **debe** sumar una entrada aquí y actu
 
 ---
 
+## v1.0.10 — 2026-08-08
+
+**Tipo:** Corrección  
+
+**Título:** Fallback SPA 404.html + URL correcta del demo JSON en Pages  
+
+**Descripción APB:**  
+Las rutas tipo `/catalogs` devolvían 404 de GitHub; ahora se copia `index.html` a `404.html`. El JSON de demo se pide usando el `<base href>` para que los catálogos carguen bien.
+
+**Archivos afectados:**
+
+- `.github/workflows/pages.yml`
+- `frontend/src/app/services/demo-data.service.ts`
+- `specs/changelog.md`
+
+---
+
 ## v1.0.9 — 2026-08-08
 
 **Tipo:** Nueva Función  

@@ -29,10 +29,16 @@ export class DemoDataService {
 
   constructor(private http: HttpClient) {}
 
+  private demoDbUrl(): string {
+    const base = document.querySelector('base')?.href
+      || `${window.location.origin}${window.location.pathname.replace(/\/[^/]*$/, '/')}`;
+    return new URL('assets/demo/db.json', base).toString();
+  }
+
   private load(): Observable<DemoDb> {
     if (this.memory) return from([this.memory]);
     if (!this.db$) {
-      this.db$ = this.http.get<DemoDb>('assets/demo/db.json').pipe(
+      this.db$ = this.http.get<DemoDb>(this.demoDbUrl()).pipe(
         map(db => {
           this.memory = structuredClone(db);
           return this.memory!;
